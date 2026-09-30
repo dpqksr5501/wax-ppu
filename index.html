@@ -1,156 +1,291 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>왁뿌! ASMR 왁스 뿌시기 시뮬레이터 (Wax-ppu)</title>
-    <!-- Google Fonts for Modern Typography -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <!-- FontAwesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="glass-bg"></div>
-    <div class="app-container">
-        <!-- Header -->
-        <header>
-            <div class="logo">
-                <span class="logo-accent">WAX</span>PPU <i class="fa-solid fa-fire-flame-curved logo-icon"></i>
-            </div>
-            <p class="subtitle">스트레스 해소를 위한 바삭바삭 왁스 뿌시기 ASMR</p>
-        </header>
-
-        <!-- Mode Switcher Tabs -->
-        <div class="mode-tabs-container">
-            <div class="mode-tabs">
-                <button class="mode-tab active" id="tab-wax" data-mode="wax">
-                    <i class="fa-solid fa-fire-flame-curved"></i> <span>왁스 뿌시기</span>
-                </button>
-                <button class="mode-tab" id="tab-squishy" data-mode="squishy">
-                    <i class="fa-solid fa-paw"></i> <span>모찌 말랑이</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Main Workspace -->
-        <div class="workspace">
-            <!-- Canvas Container -->
-            <div class="canvas-card">
-                <canvas id="simulator-canvas"></canvas>
-                <div class="canvas-overlay" id="hint-overlay">
-                    <span class="hint-text" id="hint-text"><i class="fa-solid fa-hand-pointer animate-tap"></i> 클릭하거나 드래그하여 왁스를 깨뜨리세요!</span>
-                </div>
-            </div>
-
-            <!-- Controls Panel -->
-            <aside class="control-panel">
-                <!-- Squishy Character Selector (말랑이 모드 전용) -->
-                <div class="control-group" id="squishy-char-group" style="display: none;">
-                    <h3><i class="fa-solid fa-shapes"></i> 말랑이 캐릭터 선택</h3>
-                    <div class="char-selector">
-                        <button class="char-chip active" data-char="cat_paw">
-                            <span class="char-emoji">🐾</span> 젤리 발바닥
-                        </button>
-                        <button class="char-chip" data-char="mochi_rabbit">
-                            <span class="char-emoji">🐰</span> 찹쌀떡 토끼
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Volume Control -->
-                <div class="control-group">
-                    <h3><i class="fa-solid fa-volume-high"></i> ASMR 사운드 볼륨</h3>
-                    <div class="slider-group">
-                        <div class="slider-label">
-                            <span>소리 크기</span>
-                            <span id="volume-val">80%</span>
-                        </div>
-                        <input type="range" id="volume-slider" min="0" max="100" value="80" class="custom-slider">
-                    </div>
-                </div>
-
-                <!-- Action Button -->
-                <button class="btn btn-primary btn-reset" id="btn-reset">
-                    <i class="fa-solid fa-rotate-right"></i> <span id="reset-btn-text">왁스 초기화 (Reset)</span>
-                </button>
-            </aside>
-        </div>
-
-        <!-- Guestbook Card (왁스 부수는 화면 아래 추가) -->
-        <section class="guestbook-card">
-            <h2><i class="fa-solid fa-book-open"></i> 방명록 (Guestbook)</h2>
-            
-            <form id="guestbook-form">
-                <div class="form-row">
-                    <input type="text" id="gb-nickname" placeholder="닉네임 (최대 10자)" maxlength="10" required>
-                    <button type="submit" class="btn btn-primary" id="btn-submit-gb">
-                        <i class="fa-solid fa-pen"></i> 작성하기
-                    </button>
-                </div>
-                <textarea id="gb-message" placeholder="방명록을 남겨주세요 (최대 100자)" maxlength="100" required></textarea>
-            </form>
-
-            <div class="guestbook-list" id="guestbook-list">
-                <div class="gb-loading"><i class="fa-solid fa-spinner fa-spin"></i> 방명록을 불러오는 중...</div>
-            </div>
-
-            <button class="btn btn-secondary btn-more" id="btn-more-gb" style="display: none;">
-                <i class="fa-solid fa-chevron-down"></i> 방명록 더보기
-            </button>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#172320" />
+    <title>왁뿌! — 바삭한 왁스와 말랑한 모찌 ASMR</title>
+    <meta
+      name="description"
+      content="클릭 한 번으로 바삭하게, 손끝으로 말랑하게. 왁스 뿌시기와 모찌 주무르기로 잠깐 쉬어가는 무료 ASMR 피젯 토이."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="ko_KR" />
+    <meta property="og:site_name" content="왁뿌! WAX-PPU" />
+    <meta property="og:title" content="왁뿌! — 오늘은, 마음을 말랑하게." />
+    <meta
+      property="og:description"
+      content="바삭한 왁스와 쫀득한 모찌. 손끝에서 시작되는 작은 휴식."
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="WAX-PPU, 바삭한 왁스와 말랑한 모찌로 즐기는 작은 휴식"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="왁뿌! ASMR 피젯 토이" />
+    <meta
+      name="twitter:description"
+      content="바삭하게 부수고, 말랑하게 주무르고. 오늘은 잠깐 쉬어가요."
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+  </head>
+  <body>
+    <a class="skip-link" href="#play">조작 화면으로 이동</a>
+    <div class="shell">
+      <header class="header">
+        <a class="brand" href="./" aria-label="왁뿌 홈"
+          ><span class="brand-mark" aria-hidden="true">✦</span
+          ><span>왁뿌<span class="brand-dot">!</span></span
+          ><span class="brand-en">WAX-PPU</span></a
+        >
+        <nav aria-label="페이지 메뉴">
+          <a href="#guestbook">마음 방명록 <span aria-hidden="true">↗</span></a
+          ><button class="quiet-button" id="btn-focus" aria-pressed="false">
+            집중 모드 <span aria-hidden="true">⛶</span>
+          </button>
+        </nav>
+      </header>
+      <main>
+        <section class="intro" aria-labelledby="page-title">
+          <div>
+            <p class="eyebrow">
+              <span class="live-dot"></span> A LITTLE BREAK FOR YOUR MIND
+            </p>
+            <h1 id="page-title">오늘은, 마음을 <em>말랑하게.</em></h1>
+            <p class="intro-copy">
+              바삭하게 부수고, 쫀득하게 주무르고.<br class="mobile-break" />
+              손끝에서 시작되는 작은 휴식.
+            </p>
+          </div>
+          <div class="intro-note">
+            <span aria-hidden="true">♫</span>
+            <p>이어폰을 끼면<br /><strong>더 좋은 소리가 들려요.</strong></p>
+          </div>
         </section>
-
-        <!-- Footer Info -->
-        <footer>
-            <p>마우스 클릭이나 화면 터치로 바삭한 왁스 파편을 깨뜨리며 ASMR을 즐기세요!</p>
-            <div class="creator-credits">
-                <p class="creator-name">Made By <strong>조연우</strong></p>
+        <section class="studio" id="play" aria-label="ASMR 시뮬레이터">
+          <div class="stage-panel">
+            <div class="stage-toolbar">
+              <div class="mode-tabs" role="group" aria-label="시뮬레이터 모드">
+                <button
+                  id="tab-wax"
+                  class="mode-tab active"
+                  aria-pressed="true"
+                >
+                  <span aria-hidden="true">✧</span> 왁스 뿌시기</button
+                ><button id="tab-squishy" class="mode-tab" aria-pressed="false">
+                  <span aria-hidden="true">◉</span> 모찌 말랑이
+                </button>
+              </div>
+              <span class="stage-tag">YOUR LITTLE PLAYGROUND</span>
             </div>
-            <p class="copyright">© 2026 WAX-PPU Simulator. Made for ultimate relaxation.</p>
-        </footer>
-    </div>
-
-    <!-- Start Overlay (Web Audio API Gestures Requirement) -->
-    <div class="start-overlay" id="start-overlay">
-        <div class="start-card">
-            <div class="start-logo">
-                <span class="logo-accent">WAX</span>PPU <i class="fa-solid fa-fire-flame-curved"></i>
-            </div>
-            <p class="start-desc">바삭바삭 소름 돋는 ASMR 왁스 뿌시기를 디지털로 만나보세요!</p>
-            
-            <div class="features-preview">
-                <div class="feature-item">
-                    <i class="fa-solid fa-headphones"></i>
-                    <div>
-                        <h4>생생한 ASMR 사운드</h4>
-                        <p>이어폰을 착용하시면 더욱 극대화된 크랙음을 느끼실 수 있습니다.</p>
-                    </div>
+            <div class="canvas-card">
+              <canvas
+                id="simulator-canvas"
+                width="520"
+                height="520"
+                aria-label="중앙의 왁스나 모찌를 클릭하거나 드래그하세요. 키보드는 아래 한 번 누르기 버튼을 사용하세요."
+                >Canvas를 사용할 수 없는 브라우저입니다.</canvas
+              >
+              <div class="stage-corner" aria-hidden="true">TAKE IT EASY.</div>
+              <div class="canvas-hint" id="hint-text">
+                중앙을 클릭하거나 드래그해 보세요
+              </div>
+              <div class="start-layer" id="start-overlay">
+                <div class="start-card">
+                  <span class="start-symbol" aria-hidden="true">✦</span>
+                  <p class="start-eyebrow">바쁜 마음에 잠깐의 쉼표</p>
+                  <h2>손끝으로 쉬어가요.</h2>
+                  <p>
+                    소리를 켜고, 가볍게 눌러보세요.<br />잘할 필요도, 끝낼
+                    필요도 없어요.
+                  </p>
+                  <button id="btn-start" class="primary-button">
+                    시작하기 <span aria-hidden="true">→</span></button
+                  ><small>소리는 언제든 조절할 수 있어요</small>
                 </div>
-                <div class="feature-item">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i>
-                    <div>
-                        <h4>리얼한 물리 시뮬레이션</h4>
-                        <p>터치하는 대로 깨지는 왁스 껍질과 사방으로 튀는 물리 파편들.</p>
-                    </div>
-                </div>
+              </div>
             </div>
-
-            <button class="btn btn-start" id="btn-start">
-                <i class="fa-solid fa-play"></i> ASMR 시작하기 (Tap to Start)
+            <div class="stage-footer">
+              <span
+                ><span class="status-dot" aria-hidden="true"></span
+                ><span id="mode-description"
+                  >바삭한 소리로 가볍게 털어내요</span
+                ></span
+              ><button id="btn-tap" class="text-button">
+                한 번 누르기 <span aria-hidden="true">↙</span>
+              </button>
+            </div>
+          </div>
+          <aside class="controls" aria-label="촉감과 소리 설정">
+            <div class="control-heading">
+              <p class="eyebrow">MAKE IT YOURS</p>
+              <h2>나만의 작은 휴식</h2>
+              <p>지금 기분에 맞게 골라보세요.</p>
+            </div>
+            <div id="squishy-char-group" class="control-group" hidden>
+              <p class="control-label">오늘의 말랑이</p>
+              <div class="character-options">
+                <button
+                  class="char-chip"
+                  data-char="cat_paw"
+                  aria-pressed="true"
+                >
+                  <img
+                    src="/assets/images/squishy/cat_paw.webp"
+                    width="48"
+                    height="48"
+                    alt=""
+                    loading="lazy"
+                  /><span>젤리 발바닥</span></button
+                ><button
+                  class="char-chip"
+                  data-char="mochi_rabbit"
+                  aria-pressed="false"
+                >
+                  <img
+                    src="/assets/images/squishy/mochi_rabbit.webp"
+                    width="48"
+                    height="48"
+                    alt=""
+                    loading="lazy"
+                  /><span>찹쌀떡 토끼</span>
+                </button>
+              </div>
+            </div>
+            <div id="feel-group" class="control-group" hidden>
+              <label class="control-label" for="feel-select">손끝의 촉감</label
+              ><select id="feel-select">
+                <option value="original">오리지널 · 익숙한 쫀득함</option>
+                <option value="soft">말랑말랑 · 부드럽게 늘어나는</option>
+                <option value="bouncy">탱글탱글 · 통통 튀는</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <label class="control-label" for="sound-select"
+                >소리의 느낌 <span aria-hidden="true">♫</span></label
+              ><select id="sound-select">
+                <option value="original">오리지널</option>
+                <option value="crispy">바삭하게</option>
+                <option value="thick">묵직하게</option>
+                <option value="soft">부드럽게</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <div class="volume-heading">
+                <label class="control-label" for="volume-slider"
+                  >소리 크기</label
+                ><output id="volume-val" for="volume-slider">80%</output>
+              </div>
+              <input
+                type="range"
+                id="volume-slider"
+                min="0"
+                max="100"
+                value="80"
+              />
+              <div class="range-captions">
+                <span>고요하게</span><span>생생하게</span>
+              </div>
+              <button
+                class="text-button sound-toggle"
+                id="btn-mute"
+                aria-pressed="false"
+              >
+                소리 끄기
+              </button>
+              <p id="audio-status" class="small-status" role="status"></p>
+            </div>
+            <div class="preferences">
+              <label class="switch-row"
+                ><span
+                  >손끝 진동
+                  <small id="haptic-support">지원하는 기기에서</small></span
+                ><input type="checkbox" id="haptics-toggle" checked /></label
+              ><label class="switch-row"
+                ><span>움직임 줄이기 <small>차분한 효과로 즐기기</small></span
+                ><input type="checkbox" id="motion-toggle"
+              /></label>
+            </div>
+            <button class="reset-button" id="btn-reset">
+              <span aria-hidden="true">↻</span>
+              <span id="reset-btn-text">새 왁스로 바꾸기</span>
             </button>
+            <p class="settings-note">선택한 설정은 이 기기에 기억해요.</p>
+          </aside>
+        </section>
+        <div class="gentle-note">
+          <span aria-hidden="true">✳</span> 손끝은 가볍게. 마음은 더 가볍게.
         </div>
+        <section
+          class="guestbook"
+          id="guestbook"
+          aria-labelledby="guestbook-title"
+        >
+          <div class="guestbook-intro">
+            <p class="eyebrow">LEAVE A LITTLE KINDNESS</p>
+            <h2 id="guestbook-title">마음 한 조각,<br />놓고 가세요.</h2>
+            <p>
+              오늘의 기분도, 작은 인사도 좋아요.<br />잠깐 쉬어간 흔적을
+              남겨주세요.
+            </p>
+            <span class="guestbook-flower" aria-hidden="true">✳</span>
+          </div>
+          <div class="guestbook-content">
+            <form id="guestbook-form">
+              <div class="form-heading">
+                <label for="gb-nickname">닉네임</label
+                ><input
+                  id="gb-nickname"
+                  maxlength="10"
+                  required
+                  placeholder="어떻게 불러드릴까요?"
+                  autocomplete="nickname"
+                />
+              </div>
+              <label class="sr-only" for="gb-message">남기고 싶은 마음</label
+              ><textarea
+                id="gb-message"
+                maxlength="100"
+                required
+                placeholder="지금 마음은 어떤가요?"
+                aria-describedby="gb-count"
+              ></textarea>
+              <div class="form-bottom">
+                <output id="gb-count" for="gb-message">0 / 100</output
+                ><button
+                  class="primary-button"
+                  id="btn-submit-gb"
+                  type="submit"
+                >
+                  마음 남기기 ↗
+                </button>
+              </div>
+              <button type="button" class="text-button" id="gb-save-local">
+                내 기기에만 저장
+              </button>
+            </form>
+            <p id="gb-status" class="small-status" role="status"></p>
+            <div id="guestbook-list" class="guestbook-list"></div>
+            <button class="more-button" id="btn-more-gb" hidden>
+              이전 마음 더 보기 ↓
+            </button>
+          </div>
+        </section>
+      </main>
+      <footer>
+        <a class="brand footer-brand" href="./">왁뿌!</a>
+        <p>아무것도 하지 않아도 괜찮은 시간.</p>
+        <span>Made by 조연우 · © 2026 WAX-PPU</span>
+      </footer>
     </div>
-
-    <!-- Firebase SDK Compat (Zero-build Web Integration) -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
-    <!-- Project JS Modules -->
-    <script src="audio.js"></script>
-    <script src="physics.js"></script>
-    <script src="guestbook.js"></script>
-    <script src="app.js"></script>
-</body>
+    <noscript
+      ><p>왁뿌를 즐기려면 브라우저에서 JavaScript를 켜주세요.</p></noscript
+    >
+    <script type="module" src="/src/main.ts"></script>
+  </body>
 </html>

@@ -1,0 +1,1 @@
+{ "version": "0.2.0", "configurations": [{ "type": "msedge", "request": "launch", "name": "WAX-PPU (pnpm dev 먼저 실행)", "url": "http://localhost:5173", "webRoot": "${workspaceFolder}" }] }

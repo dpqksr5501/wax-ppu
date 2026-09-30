@@ -1,0 +1,11 @@
+{
+  "name": "왁뿌! — 작은 ASMR 휴식",
+  "short_name": "왁뿌!",
+  "lang": "ko", "start_url": "/", "scope": "/", "display": "standalone",
+  "background_color": "#172320", "theme_color": "#172320",
+  "description": "바삭한 왁스와 말랑한 모찌로 즐기는 작은 휴식",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

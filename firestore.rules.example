@@ -1,0 +1,45 @@
+// Enable Anonymous Auth and VITE_FIREBASE_ANONYMOUS_AUTH=true before adopting.
+// Review/test in Firebase Emulator; this file is not automatically deployed.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function cooldownPath() { return /databases/$(database)/documents/guestbookCooldowns/$(request.auth.uid); }
+    function validEntry() {
+      let d = request.resource.data;
+      return d.keys().hasAll(['nickname', 'message', 'timestamp', 'uid'])
+        && d.keys().hasOnly(['nickname', 'message', 'timestamp', 'uid'])
+        && d.nickname is string && d.nickname.size() > 0 && d.nickname.size() <= 10
+        && d.message is string && d.message.size() > 0 && d.message.size() <= 100
+        && d.uid == request.auth.uid && d.timestamp == request.time;
+    }
+    match /guestbook/{id} {
+      allow get: if true;
+      allow list: if request.query.limit != null && request.query.limit <= 10;
+      allow create: if signedIn() && validEntry()
+        && (!exists(cooldownPath()) || request.time >= get(cooldownPath()).data.lastPostedAt + duration.value(10, 's'))
+        && getAfter(cooldownPath()).data.lastPostedAt == request.time
+        && getAfter(cooldownPath()).data.entryId == id;
+      allow update, delete: if false;
+    }
+    match /guestbookCooldowns/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow list, delete: if false;
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasAll(['lastPostedAt', 'entryId'])
+        && request.resource.data.keys().hasOnly(['lastPostedAt', 'entryId'])
+        && request.resource.data.entryId is string
+        && request.resource.data.lastPostedAt == request.time
+        && getAfter(/databases/$(database)/documents/guestbook/$(request.resource.data.entryId)).data.uid == uid
+        && getAfter(/databases/$(database)/documents/guestbook/$(request.resource.data.entryId)).data.timestamp == request.time;
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasAll(['lastPostedAt', 'entryId'])
+        && request.resource.data.keys().hasOnly(['lastPostedAt', 'entryId'])
+        && request.resource.data.entryId is string
+        && request.resource.data.lastPostedAt == request.time
+        && getAfter(/databases/$(database)/documents/guestbook/$(request.resource.data.entryId)).data.uid == uid
+        && getAfter(/databases/$(database)/documents/guestbook/$(request.resource.data.entryId)).data.timestamp == request.time
+        && request.time >= resource.data.lastPostedAt + duration.value(10, 's');
+    }
+  }
+}
