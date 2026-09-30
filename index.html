@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>왁뿌! ASMR 왁스 뿌시기 시뮬레이터 (Wax-ppu)</title>
+    <!-- Google Fonts for Modern Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glass-bg"></div>
+    <div class="app-container">
+        <!-- Header -->
+        <header>
+            <div class="logo">
+                <span class="logo-accent">WAX</span>PPU <i class="fa-solid fa-fire-flame-curved logo-icon"></i>
+            </div>
+            <p class="subtitle">스트레스 해소를 위한 바삭바삭 왁스 뿌시기 ASMR</p>
+        </header>
+
+        <!-- Mode Switcher Tabs -->
+        <div class="mode-tabs-container">
+            <div class="mode-tabs">
+                <button class="mode-tab active" id="tab-wax" data-mode="wax">
+                    <i class="fa-solid fa-fire-flame-curved"></i> <span>왁스 뿌시기</span>
+                </button>
+                <button class="mode-tab" id="tab-squishy" data-mode="squishy">
+                    <i class="fa-solid fa-paw"></i> <span>모찌 말랑이</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Workspace -->
+        <div class="workspace">
+            <!-- Canvas Container -->
+            <div class="canvas-card">
+                <canvas id="simulator-canvas"></canvas>
+                <div class="canvas-overlay" id="hint-overlay">
+                    <span class="hint-text" id="hint-text"><i class="fa-solid fa-hand-pointer animate-tap"></i> 클릭하거나 드래그하여 왁스를 깨뜨리세요!</span>
+                </div>
+            </div>
+
+            <!-- Controls Panel -->
+            <aside class="control-panel">
+                <!-- Squishy Character Selector (말랑이 모드 전용) -->
+                <div class="control-group" id="squishy-char-group" style="display: none;">
+                    <h3><i class="fa-solid fa-shapes"></i> 말랑이 캐릭터 선택</h3>
+                    <div class="char-selector">
+                        <button class="char-chip active" data-char="cat_paw">
+                            <span class="char-emoji">🐾</span> 젤리 발바닥
+                        </button>
+                        <button class="char-chip" data-char="mochi_rabbit">
+                            <span class="char-emoji">🐰</span> 찹쌀떡 토끼
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Volume Control -->
+                <div class="control-group">
+                    <h3><i class="fa-solid fa-volume-high"></i> ASMR 사운드 볼륨</h3>
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>소리 크기</span>
+                            <span id="volume-val">80%</span>
+                        </div>
+                        <input type="range" id="volume-slider" min="0" max="100" value="80" class="custom-slider">
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <button class="btn btn-primary btn-reset" id="btn-reset">
+                    <i class="fa-solid fa-rotate-right"></i> <span id="reset-btn-text">왁스 초기화 (Reset)</span>
+                </button>
+            </aside>
+        </div>
+
+        <!-- Guestbook Card (왁스 부수는 화면 아래 추가) -->
+        <section class="guestbook-card">
+            <h2><i class="fa-solid fa-book-open"></i> 방명록 (Guestbook)</h2>
+            
+            <form id="guestbook-form">
+                <div class="form-row">
+                    <input type="text" id="gb-nickname" placeholder="닉네임 (최대 10자)" maxlength="10" required>
+                    <button type="submit" class="btn btn-primary" id="btn-submit-gb">
+                        <i class="fa-solid fa-pen"></i> 작성하기
+                    </button>
+                </div>
+                <textarea id="gb-message" placeholder="방명록을 남겨주세요 (최대 100자)" maxlength="100" required></textarea>
+            </form>
+
+            <div class="guestbook-list" id="guestbook-list">
+                <div class="gb-loading"><i class="fa-solid fa-spinner fa-spin"></i> 방명록을 불러오는 중...</div>
+            </div>
+
+            <button class="btn btn-secondary btn-more" id="btn-more-gb" style="display: none;">
+                <i class="fa-solid fa-chevron-down"></i> 방명록 더보기
+            </button>
+        </section>
+
+        <!-- Footer Info -->
+        <footer>
+            <p>마우스 클릭이나 화면 터치로 바삭한 왁스 파편을 깨뜨리며 ASMR을 즐기세요!</p>
+            <div class="creator-credits">
+                <p class="creator-name">Made By <strong>조연우</strong></p>
+                <p><i class="fa-solid fa-circle-info"></i> 업그레이드 문의: 010-4535-5501</p>
+                <p><i class="fa-solid fa-bowl-rice"></i> 연우한테 밥주기: 농협 3021300241541</p>
+            </div>
+            <p class="copyright">© 2026 WAX-PPU Simulator. Made for ultimate relaxation.</p>
+        </footer>
+    </div>
+
+    <!-- Start Overlay (Web Audio API Gestures Requirement) -->
+    <div class="start-overlay" id="start-overlay">
+        <div class="start-card">
+            <div class="start-logo">
+                <span class="logo-accent">WAX</span>PPU <i class="fa-solid fa-fire-flame-curved"></i>
+            </div>
+            <p class="start-desc">바삭바삭 소름 돋는 ASMR 왁스 뿌시기를 디지털로 만나보세요!</p>
+            
+            <div class="features-preview">
+                <div class="feature-item">
+                    <i class="fa-solid fa-headphones"></i>
+                    <div>
+                        <h4>생생한 ASMR 사운드</h4>
+                        <p>이어폰을 착용하시면 더욱 극대화된 크랙음을 느끼실 수 있습니다.</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <div>
+                        <h4>리얼한 물리 시뮬레이션</h4>
+                        <p>터치하는 대로 깨지는 왁스 껍질과 사방으로 튀는 물리 파편들.</p>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-start" id="btn-start">
+                <i class="fa-solid fa-play"></i> ASMR 시작하기 (Tap to Start)
+            </button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK Compat (Zero-build Web Integration) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <!-- Project JS Modules -->
+    <script src="audio.js"></script>
+    <script src="physics.js"></script>
+    <script src="guestbook.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
