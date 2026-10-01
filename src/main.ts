@@ -239,7 +239,7 @@ hapticTest.addEventListener('click', () => {
   const result = vibration.pulse(CONFIG.haptics.testMs, true);
   hapticStatus.textContent =
     result === 'requested'
-      ? '진동을 요청했어요. 느껴지지 않으면 휴대폰의 진동 설정과 무음·방해 금지 모드를 확인해 주세요.'
+      ? '진동을 요청했어요.'
       : result === 'activation'
         ? '화면을 한 번 터치한 뒤 다시 테스트해 주세요.'
         : '브라우저가 진동 요청을 허용하지 않았어요. Chrome이나 삼성 인터넷에서 직접 열어 확인해 보세요.';
