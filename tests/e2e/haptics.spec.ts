@@ -46,17 +46,17 @@ test('vibration test and both modes use distinct durations without changing save
     150,
   ]);
   await page.locator('#btn-start').click();
-  await page.locator('#btn-tap').click();
+  await page.locator('#simulator-canvas').click();
   expect(await page.evaluate(() => (window as any).__vibrations)).toEqual([
     150,
   ]);
   await toggle.check();
   await page.waitForTimeout(100);
-  await page.locator('#btn-tap').click();
+  await page.locator('#simulator-canvas').click();
   expect(await page.evaluate(() => (window as any).__vibrations)).toContain(50);
   await page.locator('#tab-squishy').click();
   await page.waitForTimeout(100);
-  await page.locator('#btn-tap').click();
+  await page.locator('#simulator-canvas').click();
   expect(await page.evaluate(() => (window as any).__vibrations)).toContain(40);
   await toggle.uncheck();
   expect(await page.evaluate(() => (window as any).__vibrations.at(-1))).toBe(
@@ -78,7 +78,7 @@ for (const result of ['blocked', 'throws'] as const) {
       '진동 요청을 허용하지',
     );
     await page.locator('#btn-start').click();
-    await page.locator('#btn-tap').click();
+    await page.locator('#simulator-canvas').click();
     await expect
       .poll(() =>
         page.evaluate(

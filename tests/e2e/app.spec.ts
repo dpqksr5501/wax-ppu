@@ -11,7 +11,11 @@ test('start, both simulations, settings and focus mode work without errors', asy
   page.on('pageerror', (error) => errors.push(error.message));
   await page.locator('#btn-start').click();
   await expect(page.locator('#start-overlay')).toBeHidden();
-  await page.locator('#btn-tap').click();
+  await expect(page.getByRole('button', { name: '한 번 누르기' })).toHaveCount(
+    0,
+  );
+  await expect(page.locator('#simulator-canvas')).toBeFocused();
+  await page.locator('#simulator-canvas').press('Space');
   await expect
     .poll(() =>
       page.evaluate(() => (window as any).__waxDebug.physics.particles.length),
@@ -191,7 +195,7 @@ test('single failed image and audio requests do not prevent interaction', async 
   );
   await page.reload();
   await page.locator('#btn-start').click();
-  await page.locator('#btn-tap').click();
+  await page.locator('#simulator-canvas').click();
   await expect
     .poll(() =>
       page.evaluate(

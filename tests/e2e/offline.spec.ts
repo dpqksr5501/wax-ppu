@@ -14,14 +14,14 @@ test('production shell reloads offline and local guestbook remains usable', asyn
     )
     .toBe(true);
   await page.locator('#btn-start').click();
-  await page.locator('#btn-tap').click();
+  await page.locator('#simulator-canvas').click();
   await context.setOffline(true);
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.locator('#btn-start')).toBeVisible();
   await page.locator('#btn-start').click();
   await page.locator('#tab-squishy').click();
   await expect(page.locator('#start-overlay')).toBeHidden();
-  await page.locator('#btn-tap').click();
+  await page.locator('#simulator-canvas').click();
   await page.locator('#gb-nickname').fill('오프라인');
   await page.locator('#gb-message').fill('내 기기에만 기록해요');
   await page.locator('#gb-save-local').click();

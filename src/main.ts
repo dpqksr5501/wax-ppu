@@ -156,7 +156,7 @@ startButton.addEventListener('click', () => {
   unlockAudio();
   overlay.hidden = true;
   loop.wake();
-  element<HTMLButtonElement>('btn-tap').focus({ preventScroll: true });
+  canvas.focus({ preventScroll: true });
 });
 waxTab.addEventListener('click', () => updateMode('wax'));
 mochiTab.addEventListener('click', () => updateMode('squishy', true));
@@ -264,7 +264,10 @@ element('btn-reset').addEventListener('click', () => {
   haptic();
   loop.wake();
 });
-element('btn-tap').addEventListener('click', () => {
+canvas.addEventListener('keydown', (event) => {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  if (event.repeat) return;
   if (!started) {
     startButton.focus();
     return;

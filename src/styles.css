@@ -42,7 +42,8 @@ button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 select:focus-visible,
-textarea:focus-visible {
+textarea:focus-visible,
+canvas:focus-visible {
   outline: 3px solid #ddb87f;
   outline-offset: 4px;
 }
@@ -333,10 +334,6 @@ h1 em {
 }
 .text-button:hover {
   color: #829f7d;
-}
-.stage-footer .text-button {
-  color: #546f50;
-  font-weight: 600;
 }
 .controls {
   background: #23332c;
@@ -923,9 +920,6 @@ body.reduced-motion *:before {
     padding: 14px 15px;
     min-height: 52px;
     font-size: 9px;
-  }
-  .stage-footer .text-button {
-    font-size: 10px;
   }
   .controls {
     display: grid;

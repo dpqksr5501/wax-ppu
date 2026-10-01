@@ -88,7 +88,9 @@
                 id="simulator-canvas"
                 width="520"
                 height="520"
-                aria-label="중앙의 왁스나 모찌를 클릭하거나 드래그하세요. 키보드는 아래 한 번 누르기 버튼을 사용하세요."
+                tabindex="0"
+                role="button"
+                aria-label="중앙의 왁스나 모찌를 클릭하거나 드래그하세요. 키보드는 Enter 또는 Space로 조작하세요."
                 >Canvas를 사용할 수 없는 브라우저입니다.</canvas
               >
               <div class="stage-corner" aria-hidden="true">TAKE IT EASY.</div>
@@ -116,9 +118,7 @@
                 ><span id="mode-description"
                   >바삭한 소리로 가볍게 털어내요</span
                 ></span
-              ><button id="btn-tap" class="text-button">
-                한 번 누르기 <span aria-hidden="true">↙</span>
-              </button>
+              >
             </div>
           </div>
           <aside class="controls" aria-label="촉감과 소리 설정">
