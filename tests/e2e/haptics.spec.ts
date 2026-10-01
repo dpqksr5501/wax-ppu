@@ -25,6 +25,7 @@ async function openWithVibration(
 test('vibration test and both modes use distinct durations without changing saved preference', async ({
   page,
 }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await openWithVibration(page, 'ok');
   const toggle = page.locator('#haptics-toggle');
   await toggle.uncheck();
@@ -33,6 +34,14 @@ test('vibration test and both modes use distinct durations without changing save
     '진동을 요청했어요',
   );
   await expect(toggle).not.toBeChecked();
+  const preferences = await page.locator('.preferences').boundingBox();
+  const hapticRow = await page.locator('.switch-row').first().boundingBox();
+  const testRow = await page.locator('.haptic-test-row').boundingBox();
+  const toggleBox = await toggle.boundingBox();
+  expect(hapticRow!.width).toBeGreaterThan(preferences!.width * 0.9);
+  expect(testRow!.width).toBeGreaterThan(preferences!.width * 0.9);
+  expect(testRow!.y).toBeGreaterThan(hapticRow!.y);
+  expect(toggleBox!.width).toBe(32);
   expect(await page.evaluate(() => (window as any).__vibrations)).toEqual([
     150,
   ]);

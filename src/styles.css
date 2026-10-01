@@ -471,6 +471,7 @@ input[type='range']::-moz-range-thumb {
 }
 .switch-row input {
   appearance: none;
+  flex-shrink: 0;
   width: 32px;
   height: 19px;
   border-radius: 20px;
@@ -946,8 +947,8 @@ body.reduced-motion *:before {
     font-size: 8px;
   }
   .preferences {
-    flex-direction: row;
-    gap: 20px;
+    flex-direction: column;
+    gap: 17px;
   }
   .switch-row {
     flex: 1;
