@@ -144,23 +144,8 @@ nav a span {
   justify-content: space-between;
   padding: 55px 0 39px;
 }
-.eyebrow {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 2px;
-  color: var(--muted);
-  display: flex;
-  align-items: center;
-  gap: 9px;
-}
-.live-dot {
-  width: 6px;
-  height: 6px;
-  background: var(--mint);
-  border-radius: 50%;
-}
 h1 {
-  margin: 13px 0 17px;
+  margin: 0 0 17px;
   font-size: 39px;
   line-height: 1.4;
   font-weight: 700;
@@ -251,12 +236,6 @@ h1 em {
   color: #344b37;
   box-shadow: 0 2px 7px #2033230b;
 }
-.stage-tag {
-  font-size: 8px;
-  letter-spacing: 1.3px;
-  color: #8d9b8c;
-  padding-left: 8px;
-}
 .canvas-card {
   width: 100%;
   aspect-ratio: 1;
@@ -277,15 +256,6 @@ h1 em {
 }
 .canvas-card canvas:active {
   cursor: grabbing;
-}
-.stage-corner {
-  position: absolute;
-  top: 25px;
-  left: 28px;
-  font-size: 9px;
-  letter-spacing: 2px;
-  color: #a2afa0;
-  pointer-events: none;
 }
 .canvas-hint {
   position: absolute;
@@ -348,15 +318,11 @@ h1 em {
   font-size: 19px;
   font-weight: 600;
   letter-spacing: -0.6px;
-  margin: 11px 0 8px;
+  margin: 0 0 8px;
 }
 .control-heading > p:last-child {
   font-size: 11px;
   color: var(--muted);
-}
-.control-heading .eyebrow {
-  color: #aecaac;
-  font-size: 9px;
 }
 .control-label {
   display: flex;
@@ -567,9 +533,9 @@ input[type='range']::-moz-range-thumb {
   line-height: 1.5;
   font-weight: 500;
   letter-spacing: -1px;
-  margin: 18px 0;
+  margin: 0 0 18px;
 }
-.guestbook-intro > p:not(.eyebrow) {
+.guestbook-intro > p {
   font-size: 12px;
   color: var(--muted);
   line-height: 1.9;
@@ -832,9 +798,6 @@ body.reduced-motion *:before {
     padding: 25px 20px;
     gap: 22px;
   }
-  .stage-tag {
-    display: none;
-  }
   .intro h1 {
     font-size: 34px;
   }
@@ -887,10 +850,6 @@ body.reduced-motion *:before {
   .intro-note {
     display: none;
   }
-  .eyebrow {
-    font-size: 8px;
-    letter-spacing: 1.5px;
-  }
   .studio {
     grid-template-columns: 1fr;
     gap: 15px;
@@ -906,11 +865,6 @@ body.reduced-motion *:before {
     flex: 1;
     font-size: 12px;
     padding: 10px 8px;
-  }
-  .stage-corner {
-    font-size: 8px;
-    top: 19px;
-    left: 20px;
   }
   .canvas-hint {
     font-size: 10px;
@@ -935,10 +889,7 @@ body.reduced-motion *:before {
   }
   .control-heading h2 {
     font-size: 18px;
-    margin: 7px 0;
-  }
-  .control-heading .eyebrow {
-    font-size: 8px;
+    margin: 0 0 7px;
   }
   .preferences {
     flex-direction: column;
@@ -974,7 +925,7 @@ body.reduced-motion *:before {
   .guestbook-intro h2 br {
     display: none;
   }
-  .guestbook-intro > p:not(.eyebrow) {
+  .guestbook-intro > p {
     font-size: 11px;
   }
   .guestbook-flower {
