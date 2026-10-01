@@ -204,9 +204,18 @@
               <label class="switch-row"
                 ><span
                   >손끝 진동
-                  <small id="haptic-support">지원하는 기기에서</small></span
-                ><input type="checkbox" id="haptics-toggle" checked /></label
-              ><label class="switch-row"
+                  <small id="haptic-support"
+                    >진동 테스트로 확인해 보세요</small
+                  ></span
+                ><input type="checkbox" id="haptics-toggle" checked
+              /></label>
+              <div class="haptic-test-row">
+                <button type="button" class="text-button" id="btn-haptic-test">
+                  진동 테스트
+                </button>
+                <p id="haptic-status" class="small-status" role="status"></p>
+              </div>
+              <label class="switch-row"
                 ><span>움직임 줄이기 <small>차분한 효과로 즐기기</small></span
                 ><input type="checkbox" id="motion-toggle"
               /></label>

@@ -437,6 +437,17 @@ input[type='range']::-moz-range-thumb {
 #audio-status:empty {
   display: none;
 }
+.haptic-test-row {
+  margin-top: -10px;
+}
+.haptic-test-row button {
+  min-height: 36px;
+  font-size: 11px;
+  color: var(--mint);
+}
+#haptic-status:empty {
+  display: none;
+}
 .preferences {
   border-top: 1px solid #41503e;
   border-bottom: 1px solid #41503e;

@@ -11,7 +11,7 @@ export default defineConfig({
   projects: [
     {
       name: 'app',
-      testMatch: 'app.spec.ts',
+      testMatch: ['app.spec.ts', 'haptics.spec.ts'],
       use: { baseURL: 'http://127.0.0.1:5174' },
     },
     {

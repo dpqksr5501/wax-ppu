@@ -4,6 +4,7 @@ import { loadSettings, saveSettings, safeRead } from './core/settings.js';
 import { setupCanvas } from './core/canvas.js';
 import { SimulationLoop } from './core/loop.js';
 import { bindInput } from './core/input.js';
+import { createHaptics } from './core/haptics.js';
 import { WaxPhysicsEngine } from './simulations/physics.js';
 import { WaxAudioEngine } from './audio/engine.js';
 import { Guestbook } from './guestbook/controller.js';
@@ -55,8 +56,17 @@ const persist = () => {
     element('audio-status').textContent =
       '기기에서 설정 저장을 허용하지 않아요. 이번 방문 동안 적용해요.';
 };
+const vibration = createHaptics();
+const hapticStatus = element('haptic-status');
+const hapticTest = element<HTMLButtonElement>('btn-haptic-test');
 const haptic = () => {
-  if (settings.haptics && navigator.vibrate) navigator.vibrate(15);
+  if (!settings.haptics) return;
+  const result = vibration.pulse(
+    physics.mode === 'wax' ? CONFIG.haptics.waxMs : CONFIG.haptics.mochiMs,
+  );
+  if (result === 'blocked')
+    hapticStatus.textContent =
+      '브라우저가 진동 요청을 허용하지 않았어요. Chrome이나 삼성 인터넷에서 직접 열어 확인해 보세요.';
 };
 const refreshVolume = () => {
   volume.value = String(settings.volume);
@@ -211,12 +221,29 @@ haptics.checked = settings.haptics;
 haptics.addEventListener('change', () => {
   settings.haptics = haptics.checked;
   persist();
-  haptic();
+  hapticStatus.textContent = '';
+  if (settings.haptics) {
+    if (vibration.pulse(CONFIG.haptics.confirmMs, true) === 'blocked')
+      hapticStatus.textContent =
+        '브라우저가 진동 요청을 허용하지 않았어요. 진동 테스트로 확인해 보세요.';
+  } else vibration.stop();
 });
-if (!navigator.vibrate) {
+if (!vibration.available) {
   haptics.disabled = true;
-  element('haptic-support').textContent = '이 기기는 진동을 지원하지 않아요';
+  haptics.checked = false;
+  hapticTest.disabled = true;
+  element('haptic-support').textContent =
+    '이 브라우저는 진동을 지원하지 않아요';
 }
+hapticTest.addEventListener('click', () => {
+  const result = vibration.pulse(CONFIG.haptics.testMs, true);
+  hapticStatus.textContent =
+    result === 'requested'
+      ? '진동을 요청했어요. 느껴지지 않으면 휴대폰의 진동 설정과 무음·방해 금지 모드를 확인해 주세요.'
+      : result === 'activation'
+        ? '화면을 한 번 터치한 뒤 다시 테스트해 주세요.'
+        : '브라우저가 진동 요청을 허용하지 않았어요. Chrome이나 삼성 인터넷에서 직접 열어 확인해 보세요.';
+});
 function updateMotion() {
   motion.checked = settings.reducedMotion;
   physics.reducedMotion = settings.reducedMotion;
@@ -267,7 +294,10 @@ document.addEventListener('keydown', (event) => {
 });
 document.addEventListener('visibilitychange', () => {
   loop.setEnabled(!document.hidden);
-  if (document.hidden) audio.suspend();
+  if (document.hidden) {
+    audio.suspend();
+    vibration.stop();
+  }
 });
 window.addEventListener('pageshow', () => loop.setEnabled(!document.hidden));
 const guestbook = new Guestbook(element('guestbook'));
@@ -282,6 +312,7 @@ if (import.meta.env.DEV)
   });
 const dispose = () => {
   clearTimeout(keyboardRelease);
+  vibration.stop();
   input.dispose();
   loop.dispose();
   viewport.dispose();
@@ -293,6 +324,7 @@ window.addEventListener('pagehide', (event) => {
   else {
     loop.stop();
     audio.suspend();
+    vibration.stop();
   }
 });
 import.meta.hot?.dispose(dispose);
