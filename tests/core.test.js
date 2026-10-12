@@ -10,6 +10,8 @@ import {
 } from '../src/guestbook/data.js';
 import { WaxPhysicsEngine } from '../src/simulations/physics.js';
 import { readyImage } from '../src/core/assets.js';
+import { deformPoint } from '../src/simulations/deformation.js';
+import { FEELS, CONFIG } from '../src/config.js';
 
 globalThis.Image = class {
   constructor() {
@@ -112,6 +114,92 @@ test('hit test follows deformed mochi and release clears pressing state', () => 
   physics.handleSquishyUp();
   assert.equal(physics.squishyObj.isPressed, false);
   assert.equal(physics.squishyObj.pressPoint, null);
+});
+
+test('contact flattens vertically, pushes its sides out and leaves distant material still', () => {
+  const out = {};
+  deformPoint(30, 0, 0, 0, 1, out);
+  assert.ok(out.x > 36);
+  deformPoint(-30, 0, 0, 0, 1, out);
+  assert.ok(out.x < -36);
+  deformPoint(0, 30, 0, 0, 1, out);
+  const bottom = out.y;
+  deformPoint(0, -30, 0, 0, 1, out);
+  assert.ok(bottom - out.y < 60);
+  assert.deepEqual(deformPoint(100, 20, 0, 0, 1, out), { x: 100, y: 20 });
+  assert.deepEqual(deformPoint(30, 20, 0, 0, 0, out), { x: 30, y: 20 });
+});
+
+test('all feels keep a local press while held, then fully restore and rest', () => {
+  for (const feel of Object.keys(FEELS)) {
+    const physics = engine();
+    physics.setMode('squishy');
+    physics.setFeel(feel);
+    physics.handleSquishyDown(290, 285);
+    for (let i = 0; i < 180; i++) physics.update(1);
+    assert.ok(physics.squishyObj.pressure > 0.8);
+    assert.equal(physics.squishyObj.isPressed, true);
+    assert.equal(physics.isActive(), false);
+    physics.handleSquishyMove(335, 300);
+    assert.equal(physics.isActive(), true);
+    assert.ok(physics.squishyObj.targetPressure > 0.8);
+    physics.handleSquishyUp();
+    for (let i = 0; i < 240; i++) physics.update(1);
+    assert.equal(physics.isActive(), false);
+    assert.equal(physics.squishyObj.pressure, 0);
+    assert.equal(physics.squishyObj.scaleX, 1);
+    assert.equal(physics.squishyObj.offsetX, 0);
+  }
+});
+
+test('rapid squishy presses stay bounded and mode changes clear the contact', () => {
+  const physics = engine();
+  physics.setMode('squishy');
+  for (let i = 0; i < 1000; i++) {
+    physics.handleSquishyDown(280, 270);
+    physics.update(1);
+    physics.handleSquishyUp();
+  }
+  assert.ok(physics.squishyParticles.length <= CONFIG.mochi.maxParticles);
+  assert.ok(physics.squishyObj.pressure <= 1.3);
+  for (let i = 0; i < 240; i++) physics.update(1);
+  assert.equal(physics.isActive(), false);
+  physics.handleSquishyDown(260, 260);
+  physics.setMode('wax');
+  physics.setMode('squishy');
+  assert.equal(physics.squishyObj.pressure, 0);
+  assert.equal(physics.squishyObj.isPressed, false);
+});
+
+test('sweeping follows the pointer, stays on the edge outside, and ignores hover after release', () => {
+  const physics = engine();
+  physics.setMode('squishy');
+  physics.handleSquishyDown(230, 260);
+  for (let i = 0; i < 120; i++) physics.update(1);
+  const initialContact = physics.squishyObj.pressX;
+  physics.handleSquishyMove(335, 290);
+  for (let i = 0; i < 180; i++) physics.update(1);
+  const sq = physics.squishyObj;
+  assert.ok(sq.pressX > initialContact + 60);
+  const c = Math.cos(sq.rotation),
+    s = Math.sin(sq.rotation);
+  const contactX =
+    sq.x + sq.offsetX + sq.pressX * sq.scaleX * c - sq.pressY * sq.scaleY * s;
+  const contactY =
+    sq.y + sq.offsetY + sq.pressX * sq.scaleX * s + sq.pressY * sq.scaleY * c;
+  assert.ok(Math.hypot(contactX - 335, contactY - 290) < 0.01);
+  assert.ok(Math.abs(sq.offsetX) < 25);
+  assert.ok(sq.scaleX < 1.08);
+  physics.handleSquishyMove(1600, -1200);
+  for (let i = 0; i < 180; i++) physics.update(1);
+  assert.ok(Math.hypot(sq.pressX, sq.pressY) <= sq.baseRadius + 0.01);
+  physics.handleSquishyUp();
+  const contact = { x: sq.pressX, y: sq.pressY };
+  assert.equal(physics.handleSquishyMove(220, 300), 'none');
+  assert.deepEqual({ x: sq.pressX, y: sq.pressY }, contact);
+  for (let i = 0; i < 240; i++) physics.update(1);
+  assert.equal(physics.isActive(), false);
+  assert.equal(sq.pressure, 0);
 });
 test('settings recover from malformed JSON and blocked localStorage', () => {
   const broken = {

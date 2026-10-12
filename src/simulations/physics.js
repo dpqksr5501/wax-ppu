@@ -7,6 +7,9 @@ const SETTLE_AXES = [
   ['offsetX', 'targetOffsetX', 'vOffsetX'],
   ['offsetY', 'targetOffsetY', 'vOffsetY'],
   ['rotation', 'targetRotation', 'vRotation'],
+  ['pressure', 'targetPressure', 'vPressure'],
+  ['pressX', 'targetPressX', 'vPressX'],
+  ['pressY', 'targetPressY', 'vPressY'],
 ];
 /**
  * Wax-ppu ASMR Simulator - Unified Physics & Rendering Engine
@@ -88,6 +91,17 @@ export class WaxPhysicsEngine {
 
       isPressed: false,
       pressPoint: null,
+      pressX: 0,
+      pressY: 0,
+      targetPressX: 0,
+      targetPressY: 0,
+      vPressX: 0,
+      vPressY: 0,
+      pointerX: 0,
+      pointerY: 0,
+      pressure: 0,
+      targetPressure: 0,
+      vPressure: 0,
     };
 
     this.squishyParticles = []; // Hearts, stars, jelly bubbles
@@ -166,8 +180,7 @@ export class WaxPhysicsEngine {
 
   isActive() {
     const sq = this.mode === 'wax' ? this.squishy : this.squishyObj;
-    if (sq.isPressed || this.particles.length || this.squishyParticles.length)
-      return true;
+    if (this.particles.length || this.squishyParticles.length) return true;
     for (const [position, target, velocity] of SETTLE_AXES) {
       if (!(position in sq)) continue;
       if (
@@ -233,6 +246,9 @@ export class WaxPhysicsEngine {
     sq.vRotation = 0;
     sq.isPressed = false;
     sq.pressPoint = null;
+    sq.pressure = sq.targetPressure = sq.vPressure = 0;
+    sq.pressX = sq.pressY = sq.targetPressX = sq.targetPressY = 0;
+    sq.vPressX = sq.vPressY = sq.pointerX = sq.pointerY = 0;
     this.squishyParticles.length = 0;
   }
 
@@ -287,32 +303,23 @@ export class WaxPhysicsEngine {
    */
   handleSquishyDown(mx, my) {
     const sq = this.squishyObj;
-    const currentCenterX = sq.x + sq.offsetX;
-    const currentCenterY = sq.y + sq.offsetY;
-
-    const dx = mx - currentCenterX;
-    const dy = my - currentCenterY;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-
     // Check if inside squishy radius
     if (this.hitTest(mx, my)) {
       sq.isPressed = true;
       sq.pressPoint = { x: mx, y: my };
-
-      const angle = Math.atan2(dy, dx);
-      const pressForce =
-        Math.min(1.0, 0.4 + (dist / sq.baseRadius) * 0.6) * this.feel.squeeze;
-
-      // Stylized squash & stretch (a visual approximation):
-      // Squeezed along press axis, bulges out in perpendicular axis
-      const cos2 = Math.cos(angle) * Math.cos(angle);
-      const sin2 = Math.sin(angle) * Math.sin(angle);
-
-      sq.targetScaleX =
-        1.0 - cos2 * (0.28 * pressForce) + sin2 * (0.24 * pressForce);
-      sq.targetScaleY =
-        1.0 - sin2 * (0.28 * pressForce) + cos2 * (0.24 * pressForce);
-      sq.targetRotation = (dx / sq.baseRadius) * 0.12;
+      sq.pointerX = mx;
+      sq.pointerY = my;
+      this._updateContactTarget();
+      sq.pressX = sq.targetPressX;
+      sq.pressY = sq.targetPressY;
+      sq.vPressX = sq.vPressY = 0;
+      // Repeated taps begin at the new contact instead of piling up impulses.
+      sq.pressure = 0.18;
+      sq.vPressure = 0;
+      sq.targetPressure = this.feel.squeeze;
+      sq.targetScaleX = 1.025;
+      sq.targetScaleY = 0.975;
+      sq.targetRotation = 0;
 
       // Spawn cute jelly particles
       this.spawnSquishyParticles(mx, my, 5 + Math.floor(Math.random() * 4));
@@ -321,6 +328,20 @@ export class WaxPhysicsEngine {
     }
 
     return 'none';
+  }
+
+  _updateContactTarget() {
+    const sq = this.squishyObj;
+    const dx = sq.pointerX - sq.x - sq.offsetX;
+    const dy = sq.pointerY - sq.y - sq.offsetY;
+    const c = Math.cos(sq.rotation),
+      s = Math.sin(sq.rotation);
+    const x = (dx * c + dy * s) / Math.max(0.2, sq.scaleX);
+    const y = (-dx * s + dy * c) / Math.max(0.2, sq.scaleY);
+    // Outside the toy, keep the contact on its soft edge rather than detaching it.
+    const factor = Math.min(1, sq.baseRadius / Math.max(1, Math.hypot(x, y)));
+    sq.targetPressX = x * factor;
+    sq.targetPressY = y * factor;
   }
 
   /**
@@ -332,32 +353,37 @@ export class WaxPhysicsEngine {
       !this.squishyObj.isPressed ||
       !this.squishyObj.pressPoint
     ) {
-      return;
+      return 'none';
     }
 
     const sq = this.squishyObj;
+    if (Math.hypot(mx - sq.pointerX, my - sq.pointerY) < 0.5) return 'none';
+    sq.pointerX = mx;
+    sq.pointerY = my;
     const pullDx = mx - sq.pressPoint.x;
     const pullDy = my - sq.pressPoint.y;
     const pullDist = Math.sqrt(pullDx * pullDx + pullDy * pullDy);
 
-    // Limit maximum stretching distance (max 65px)
+    // The body follows slightly; the main deformation slides under the pointer.
     const maxPull = this.feel.pull;
     const clampedDist = Math.min(maxPull, pullDist);
     const pullAngle = Math.atan2(pullDy, pullDx);
 
-    sq.targetOffsetX = Math.cos(pullAngle) * clampedDist * 0.65;
-    sq.targetOffsetY = Math.sin(pullAngle) * clampedDist * 0.65;
+    sq.targetOffsetX = Math.cos(pullAngle) * clampedDist * 0.28;
+    sq.targetOffsetY = Math.sin(pullAngle) * clampedDist * 0.28;
 
     // Stretch towards pull direction
-    const stretchAmount = (clampedDist / maxPull) * 0.25;
+    const stretchAmount = (clampedDist / maxPull) * 0.045;
     const pCos2 = Math.cos(pullAngle) * Math.cos(pullAngle);
     const pSin2 = Math.sin(pullAngle) * Math.sin(pullAngle);
 
     sq.targetScaleX =
-      1.0 + pCos2 * stretchAmount - pSin2 * (stretchAmount * 0.5);
+      1.025 + pCos2 * stretchAmount - pSin2 * (stretchAmount * 0.5);
     sq.targetScaleY =
-      1.0 + pSin2 * stretchAmount - pCos2 * (stretchAmount * 0.5);
-    sq.targetRotation = (sq.targetOffsetX / maxPull) * 0.18;
+      0.975 + pSin2 * stretchAmount - pCos2 * (stretchAmount * 0.5);
+    sq.targetRotation = (sq.targetOffsetX / maxPull) * 0.08;
+    this._updateContactTarget();
+    return 'squish';
   }
 
   /**
@@ -370,6 +396,11 @@ export class WaxPhysicsEngine {
     const sq = this.squishyObj;
     sq.isPressed = false;
     sq.pressPoint = null;
+    sq.targetPressure = 0;
+    // Fade the final contact in place while the body restores.
+    sq.targetPressX = sq.pressX;
+    sq.targetPressY = sq.pressY;
+    sq.vPressX = sq.vPressY = 0;
 
     // Return targets to normal
     sq.targetScaleX = 1.0;
@@ -548,6 +579,10 @@ export class WaxPhysicsEngine {
    */
   _updateSquishy(dt) {
     const sq = this.squishyObj;
+    sq.vPressure += sq.springK * (sq.targetPressure - sq.pressure);
+    // A soft, nearly critically damped return keeps the displaced rim smooth.
+    sq.vPressure *= 0.58;
+    sq.pressure = Math.max(0, Math.min(1.3, sq.pressure + sq.vPressure * dt));
 
     // 1. Scale spring bounce
     const ax = sq.springK * (sq.targetScaleX - sq.scaleX);
@@ -574,6 +609,15 @@ export class WaxPhysicsEngine {
     sq.vRotation += aRot;
     sq.vRotation *= 0.76;
     sq.rotation += sq.vRotation * dt;
+
+    // Keep contact in material space as the following body moves and rotates.
+    if (sq.isPressed) {
+      this._updateContactTarget();
+      sq.vPressX = (sq.targetPressX - sq.pressX) * 0.36;
+      sq.vPressY = (sq.targetPressY - sq.pressY) * 0.36;
+      sq.pressX += sq.vPressX * dt;
+      sq.pressY += sq.vPressY * dt;
+    }
 
     // 4. Update floating squishy particles
     let write = 0;

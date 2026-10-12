@@ -145,6 +145,7 @@ export class WaxAudioEngine {
     return true;
   }
   _noiseBurst(now, duration, frequency, intensity, type = 'bandpass') {
+    if (this.voices.size >= CONFIG.audio.maxVoices) return;
     const ctx = this.ctx,
       source = ctx.createBufferSource();
     source.buffer = this.noise;
@@ -173,6 +174,7 @@ export class WaxAudioEngine {
     );
   }
   _body(now, duration, frequency, intensity) {
+    if (this.voices.size >= CONFIG.audio.maxVoices) return;
     const ctx = this.ctx,
       osc = ctx.createOscillator(),
       gain = ctx.createGain();
@@ -188,6 +190,7 @@ export class WaxAudioEngine {
   }
   play(mode, intensity = 1) {
     if (!this.ctx || this.ctx.state !== 'running' || !this.volume) return;
+    if (this.voices.size >= CONFIG.audio.maxVoices) return;
     if (!Number.isFinite(intensity)) return;
     intensity = Math.max(0.1, Math.min(1.2, intensity));
     if (this._sample(mode, intensity)) return;

@@ -1,6 +1,12 @@
 export const CONFIG = Object.freeze({
   view: Object.freeze({ width: 520, height: 520, maxDpr: 2 }),
-  timing: Object.freeze({ stepMs: 1000 / 60, maxFrameMs: 100, dragMs: 50 }),
+  timing: Object.freeze({
+    stepMs: 1000 / 60,
+    maxFrameMs: 100,
+    dragMs: 50,
+    squishyDragMs: 140,
+    squishyDragDistance: 14,
+  }),
   haptics: Object.freeze({
     waxMs: 50,
     mochiMs: 40,

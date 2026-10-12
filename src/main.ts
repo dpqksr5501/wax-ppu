@@ -34,6 +34,8 @@ const hint = element('hint-text'),
   audioStatus = element('audio-status');
 let started = false,
   lastDrag = -Infinity,
+  lastDragX = 0,
+  lastDragY = 0,
   keyboardRelease: ReturnType<typeof setTimeout> | undefined;
 let previousVolume = settings.volume || 80;
 const audio = new WaxAudioEngine((state: string) => {
@@ -96,6 +98,8 @@ function begin(x: number, y: number) {
   if (action === 'none') return false;
   hint.classList.add('used');
   lastDrag = performance.now();
+  lastDragX = x;
+  lastDragY = y;
   audio.play(physics.mode, physics.mode === 'wax' ? 1 : 1.05);
   haptic();
   loop.wake();
@@ -110,8 +114,21 @@ const input = bindInput(canvas, {
   hitTest: (x: number, y: number) => started && physics.hitTest(x, y),
   start: begin,
   move: (x: number, y: number) => {
-    if (physics.mode === 'squishy') physics.handleSquishyMove(x, y);
-    else if (performance.now() - lastDrag >= CONFIG.timing.dragMs) {
+    if (physics.mode === 'squishy') {
+      const moved = physics.handleSquishyMove(x, y) === 'squish';
+      const now = performance.now();
+      if (
+        moved &&
+        now - lastDrag >= CONFIG.timing.squishyDragMs &&
+        Math.hypot(x - lastDragX, y - lastDragY) >=
+          CONFIG.timing.squishyDragDistance
+      ) {
+        lastDrag = now;
+        lastDragX = x;
+        lastDragY = y;
+        audio.play('squishy', 0.7);
+      }
+    } else if (performance.now() - lastDrag >= CONFIG.timing.dragMs) {
       lastDrag = performance.now();
       if (physics.handleClick(x, y) === 'shatter') {
         audio.play('wax');
@@ -140,7 +157,7 @@ function updateMode(mode: string, playSound = false) {
   hint.textContent =
     mode === 'wax'
       ? '중앙을 클릭하거나 드래그해 보세요'
-      : '꾹 누르고, 천천히 당겨보세요';
+      : '꾹 누르고, 천천히 쓸어보세요';
   hint.classList.remove('used');
   if (started) {
     unlockAudio();

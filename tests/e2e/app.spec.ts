@@ -146,13 +146,29 @@ test('mobile DPR, no overflow, active-touch identity and cancel recovery', async
       touchPoints: [{ x, y: y - step * 35 }],
     });
   await session.send('Input.dispatchTouchEvent', {
-    type: 'touchEnd',
+    type: 'touchCancel',
     touchPoints: [],
   });
   await expect
     .poll(() => page.evaluate(() => scrollY))
     .toBeGreaterThan(beforeGutter);
+  // Finish the gutter's native momentum before testing a separate object gesture.
+  await page.evaluate(async () => {
+    let previous = scrollY,
+      stable = 0;
+    for (let frame = 0; frame < 240 && stable < 12; frame++) {
+      await new Promise(requestAnimationFrame);
+      stable = scrollY === previous ? stable + 1 : 0;
+      previous = scrollY;
+    }
+  });
   await page.locator('canvas').scrollIntoViewIfNeeded();
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
   rect = (await page.locator('canvas').boundingBox())!;
   const centerX = rect.x + rect.width / 2,
     centerY = rect.y + rect.height / 2;
@@ -161,6 +177,13 @@ test('mobile DPR, no overflow, active-touch identity and cancel recovery', async
     type: 'touchStart',
     touchPoints: [{ x: centerX, y: centerY }],
   });
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as any).__waxDebug.physics.squishyObj.isPressed,
+      ),
+    )
+    .toBe(true);
   await session.send('Input.dispatchTouchEvent', {
     type: 'touchMove',
     touchPoints: [{ x: centerX, y: centerY - 70 }],
@@ -213,4 +236,163 @@ test('single failed image and audio requests do not prevent interaction', async 
     )
     .toBeGreaterThan(0);
   await expect(page.locator('#start-overlay')).toBeHidden();
+});
+
+test('mouse holds a local press on both toys and release restores an idle scene', async ({
+  page,
+}) => {
+  await page.locator('#btn-start').click();
+  await page.locator('#tab-squishy').click();
+  await page.evaluate(() => (window as any).__waxDebug.physics.squishyLoading);
+  for (const character of ['cat_paw', 'mochi_rabbit']) {
+    await page.locator(`[data-char=${character}]`).click();
+    await expect
+      .poll(() => page.evaluate(() => (window as any).__waxDebug.loop.id))
+      .toBeNull();
+    await page.locator('canvas').scrollIntoViewIfNeeded();
+    const rect = (await page.locator('canvas').boundingBox())!;
+    await page.mouse.move(
+      rect.x + (rect.width * 292) / 520,
+      rect.y + (rect.height * 292) / 520,
+    );
+    await page.mouse.down();
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () => (window as any).__waxDebug.physics.squishyObj.pressure,
+        ),
+      )
+      .toBeGreaterThan(0.8);
+    await expect
+      .poll(() => page.evaluate(() => (window as any).__waxDebug.loop.id))
+      .toBeNull();
+    expect(
+      await page.evaluate(
+        () => (window as any).__waxDebug.physics.squishyObj.isPressed,
+      ),
+    ).toBe(true);
+    // A resting, held scene must still wake and restore on pointer release.
+    await page.mouse.up();
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () => (window as any).__waxDebug.physics.squishyObj.pressure,
+        ),
+      )
+      .toBe(0);
+    await expect
+      .poll(() => page.evaluate(() => (window as any).__waxDebug.loop.id))
+      .toBeNull();
+    expect(
+      await page.evaluate(
+        () => (window as any).__waxDebug.physics.squishyObj.scaleX,
+      ),
+    ).toBe(1);
+  }
+});
+
+test('particle animation reuses rasterized symbols and shard textures', async ({
+  page,
+}) => {
+  await page.locator('#btn-start').click();
+  const result = await page.evaluate(async () => {
+    const { physics, loop } = (window as any).__waxDebug;
+    loop.stop();
+    await physics.waxLoading;
+    await physics._loadSquishyImages();
+    const ctx = document.querySelector('canvas')!.getContext('2d')!;
+    const originalText = CanvasRenderingContext2D.prototype.fillText;
+    const originalCreate = document.createElement.bind(document);
+    let textDraws = 0,
+      canvasAllocations = 0;
+    CanvasRenderingContext2D.prototype.fillText = function (
+      ...args: Parameters<typeof originalText>
+    ) {
+      textDraws++;
+      return originalText.apply(this, args);
+    };
+    document.createElement = ((...args: Parameters<typeof originalCreate>) => {
+      if (args[0] === 'canvas') canvasAllocations++;
+      return originalCreate(...args);
+    }) as typeof document.createElement;
+    const results = [];
+    try {
+      for (const mode of ['squishy', 'wax']) {
+        physics.setMode(mode);
+        physics.handleClick(280, 270);
+        physics.draw(ctx);
+        const before = { textDraws, canvasAllocations };
+        for (let i = 0; i < 15; i++) {
+          physics.update(1);
+          physics.draw(ctx);
+        }
+        results.push({
+          mode,
+          textDraws: textDraws - before.textDraws,
+          canvasAllocations: canvasAllocations - before.canvasAllocations,
+        });
+      }
+    } finally {
+      CanvasRenderingContext2D.prototype.fillText = originalText;
+      document.createElement = originalCreate;
+    }
+    return results;
+  });
+  expect(result).toEqual([
+    { mode: 'squishy', textDraws: 0, canvasAllocations: 0 },
+    { mode: 'wax', textDraws: 0, canvasAllocations: 0 },
+  ]);
+});
+
+test('sweeping plays gentle spaced sounds only while moving with the button held', async ({
+  page,
+}) => {
+  await page.locator('#btn-start').click();
+  await page.locator('#tab-squishy').click();
+  await page.evaluate(() => (window as any).__waxDebug.physics.squishyLoading);
+  await page.locator('canvas').scrollIntoViewIfNeeded();
+  await page.clock.install();
+  await page.evaluate(() => {
+    const audio = (window as any).__waxDebug.audio;
+    const original = audio.play.bind(audio);
+    (window as any).__soundCalls = [];
+    audio.play = (mode: string, intensity: number) => {
+      (window as any).__soundCalls.push({
+        mode,
+        intensity,
+        time: performance.now(),
+      });
+      original(mode, intensity);
+    };
+  });
+  const rect = (await page.locator('canvas').boundingBox())!;
+  const move = (x: number) =>
+    page.mouse.move(rect.x + (x * rect.width) / 520, rect.y + rect.height / 2);
+  const calls = () => page.evaluate(() => (window as any).__soundCalls);
+  await move(240);
+  await page.mouse.down();
+  await page.clock.runFor(160);
+  await move(244); // Small cursor jitter does not retrigger the sound.
+  expect(await calls()).toHaveLength(1);
+  await move(275);
+  expect(await calls()).toHaveLength(2);
+  await move(300); // A fast sweep still respects the sound interval.
+  expect(await calls()).toHaveLength(2);
+  await page.clock.runFor(160);
+  await move(325);
+  expect(await calls()).toHaveLength(3);
+  await page.clock.runFor(500); // Holding still is silent.
+  expect(await calls()).toHaveLength(3);
+  await page.mouse.up();
+  await move(260);
+  await page.clock.runFor(1000);
+  const sounds = await calls();
+  expect(sounds.map((sound: any) => sound.intensity)).toEqual([1.05, 0.7, 0.7]);
+  expect(sounds.every((sound: any) => sound.mode === 'squishy')).toBe(true);
+  expect(sounds[2].time - sounds[1].time).toBeGreaterThanOrEqual(140);
+  expect(
+    await page.evaluate(
+      () => (window as any).__waxDebug.physics.squishyObj.pressure,
+    ),
+  ).toBe(0);
 });
